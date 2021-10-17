@@ -4,7 +4,7 @@ class Selector extends THREE.EventDispatcher {
   constructor(viewer) {
     super();
 
-    const ignore = ['target', 'ground', 'floor'];
+    const ignore = ['target', 'ground', 'floor', 'axes'];
 
     this.viewer = viewer;
     this.raycaster = new THREE.Raycaster();
@@ -31,7 +31,7 @@ class Selector extends THREE.EventDispatcher {
     this.mousePos.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.mousePos, this.viewer.camera);
     const intersections =
-        this.raycaster.intersectObjects(this.selectable, true);
+        this.raycaster.intersectObjects(this.selectable, false);
 
     if (intersections.length > 0) {
       let object = intersections[0].object;

@@ -65,6 +65,10 @@ class Viewer {
     this.scene.background = new THREE.Color(0xa0a0a0);
     this.scene.fog = new THREE.Fog(0xa0a0a0, 40, 60);
 
+    // /* add axis helper */
+    // const axesHelper = new THREE.AxesHelper( 1 );
+    // this.scene.add(axesHelper);
+
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
     hemiLight.position.set(0, 20, 0);
     this.scene.add(hemiLight);
@@ -273,8 +277,12 @@ class Viewer {
     });
     if (object.selected) {
       this.bodyFolders[object.name].open();
+      const axesHelper = new THREE.AxesHelper(1.0)
+      axesHelper.name = 'axes'
+      object.add(axesHelper)
     } else {
       this.bodyFolders[object.name].close();
+      object.remove(object.getObjectByName('axes'))
     }
     this.setDirty();
   }
