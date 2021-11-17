@@ -64,7 +64,7 @@ class EpisodeWrapper(brax_env.Wrapper):
     zero = jp.zeros_like(state.done)
     done = jp.where(steps >= self.episode_length, one, state.done)
     state.info['truncation'] = jp.where(steps >= self.episode_length,
-                                         1 - state.done, zero)
+                                        1 - state.done, zero)
     state.info['steps'] = steps
     return state.replace(done=done)
 
@@ -109,6 +109,10 @@ class GymWrapper(gym.Env):
                seed: int = 0,
                backend: Optional[str] = None):
     self._env = env
+    self.metadata = {
+        'render.modes': ['human', 'rgb_array'],
+        'video.frames_per_second': 1 / self._env.sys.config.dt
+    }
     self.seed(seed)
     self.backend = backend
     self._state = None
@@ -128,7 +132,7 @@ class GymWrapper(gym.Env):
 
     def step(state, action):
       state = self._env.step(state, action)
-      return state, state.obs, state.reward, state.done
+      return state, state.obs, state.reward, state.done, state.info
 
     self._step = jax.jit(step, backend=self.backend)
 
@@ -137,11 +141,20 @@ class GymWrapper(gym.Env):
     return obs
 
   def step(self, action):
-    self._state, obs, reward, done = self._step(self._state, action)
-    return obs, reward, done, {}
+    self._state, obs, reward, done, info = self._step(self._state, action)
+    return obs, reward, done, info
 
   def seed(self, seed: int = 0):
     self._key = jax.random.PRNGKey(seed)
+
+  def render(self, mode='human'):
+    # pylint:disable=g-import-not-at-top
+    from brax.io import image
+    if mode == 'rgb_array':
+      sys, qp = self._env.sys, self._state.qp
+      return image.render_array(sys, qp, 256, 256)
+    else:
+      return super().render(mode=mode)  # just raise an exception
 
 
 class VectorGymWrapper(gym.vector.VectorEnv):
@@ -156,6 +169,10 @@ class VectorGymWrapper(gym.vector.VectorEnv):
                seed: int = 0,
                backend: Optional[str] = None):
     self._env = env
+    self.metadata = {
+        'render.modes': ['human', 'rgb_array'],
+        'video.frames_per_second': 1 / self._env.sys.config.dt
+    }
     if not hasattr(self._env, 'batch_size'):
       raise ValueError('underlying env must be batched')
 
@@ -185,7 +202,7 @@ class VectorGymWrapper(gym.vector.VectorEnv):
 
     def step(state, action):
       state = self._env.step(state, action)
-      return state, state.obs, state.reward, state.done
+      return state, state.obs, state.reward, state.done, state.info
 
     self._step = jax.jit(step, backend=self.backend)
 
@@ -194,8 +211,18 @@ class VectorGymWrapper(gym.vector.VectorEnv):
     return obs
 
   def step(self, action):
-    self._state, obs, reward, done = self._step(self._state, action)
-    return obs, reward, done, {}
+    self._state, obs, reward, done, info = self._step(self._state, action)
+    return obs, reward, done, info
 
   def seed(self, seed: int = 0):
     self._key = jax.random.PRNGKey(seed)
+
+  def render(self, mode='human'):
+    # pylint:disable=g-import-not-at-top
+    from brax.io import image
+    if mode == 'rgb_array':
+      sys = self._env.sys
+      qp = jp.take(self._state.qp, 0)
+      return image.render_array(sys, qp, 256, 256)
+    else:
+      return super().render(mode=mode)  # just raise an exception

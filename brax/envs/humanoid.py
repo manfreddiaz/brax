@@ -32,9 +32,12 @@ class Humanoid(env.Env):
 
   def reset(self, rng: jp.ndarray) -> env.State:
     """Resets the environment to an initial state."""
-    qp = self.sys.default_qp()
-    random_action = jp.random_uniform(rng, (self.action_size,)) * .5
-    qp, info = self.sys.step(qp, random_action)
+    rng, rng1, rng2 = jp.random_split(rng, 3)
+    qpos = self.sys.default_angle() + jp.random_uniform(
+        rng1, (self.sys.num_joint_dof,), -.01, .01)
+    qvel = jp.random_uniform(rng2, (self.sys.num_joint_dof,), -.01, .01)
+    qp = self.sys.default_qp(joint_angle=qpos, joint_velocity=qvel)
+    info = self.sys.info(qp)
     obs = self._get_obs(qp, info, jp.zeros(self.action_size))
     reward, done, zero = jp.zeros(3)
     metrics = {
@@ -57,12 +60,12 @@ class Humanoid(env.Env):
     lin_vel_cost = 1.25 * (com_after[0] - com_before[0]) / self.sys.config.dt
     quad_ctrl_cost = .01 * jp.sum(jp.square(action))
     # can ignore contact cost, see: https://github.com/openai/gym/issues/1541
-    quad_impact_cost = 0.0
-    alive_bonus = 5.0
+    quad_impact_cost = jp.float32(0)
+    alive_bonus = jp.float32(5)
     reward = lin_vel_cost - quad_ctrl_cost - quad_impact_cost + alive_bonus
 
-    done = jp.where(qp.pos[0, 2] < 0.65, x=1.0, y=0.0)
-    done = jp.where(qp.pos[0, 2] > 2.1, x=1.0, y=done)
+    done = jp.where(qp.pos[0, 2] < 0.65, jp.float32(1), jp.float32(0))
+    done = jp.where(qp.pos[0, 2] > 2.1, jp.float32(1), done)
     state.metrics.update(
         reward_linvel=lin_vel_cost,
         reward_quadctrl=quad_ctrl_cost,

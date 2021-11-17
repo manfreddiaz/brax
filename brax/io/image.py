@@ -18,8 +18,8 @@ import io
 from typing import List, Optional, Tuple
 
 import brax
-from brax.physics.base import vec_to_arr
 from brax import math
+from brax.physics.base import vec_to_arr
 import numpy as onp
 from PIL import Image
 from pytinyrenderer import TinyRenderCamera as Camera
@@ -45,7 +45,7 @@ class Grid(TextureRGB888):
     super().__init__(list(grid.ravel()))
 
 
-_BASIC = TextureRGB888([102, 85, 68])
+_BASIC = TextureRGB888([133, 118, 102])
 _TARGET = TextureRGB888([255, 34, 34])
 _GROUND = Grid(100, [200, 200, 200])
 
@@ -143,8 +143,10 @@ def render_array(sys: brax.System, qp: brax.QP, width: int, height: int,
                   shadowmap_center=target)
   if camera is None:
     eye, up = _eye(sys, qp), _up(sys)
+    hfov = 58.0
+    vfov = hfov * height / width
     camera = Camera(viewWidth=width * ssaa, viewHeight=height * ssaa,
-                    position=eye, target=target, up=up)
+                    position=eye, target=target, up=up, hfov=hfov, vfov=vfov)
   img = scene.get_camera_image(instances, light, camera).rgb
   arr = onp.reshape(
       onp.array(img, dtype=onp.uint8),

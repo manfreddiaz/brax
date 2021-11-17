@@ -27,7 +27,11 @@ class Ant(env.Env):
 
   def reset(self, rng: jp.ndarray) -> env.State:
     """Resets the environment to an initial state."""
-    qp = self.sys.default_qp()
+    rng, rng1, rng2 = jp.random_split(rng, 3)
+    qpos = self.sys.default_angle() + jp.random_uniform(
+        rng1, (self.sys.num_joint_dof,), -.1, .1)
+    qvel = jp.random_uniform(rng2, (self.sys.num_joint_dof,), -.1, .1)
+    qp = self.sys.default_qp(joint_angle=qpos, joint_velocity=qvel)
     info = self.sys.info(qp)
     obs = self._get_obs(qp, info)
     reward, done, zero = jp.zeros(3)
@@ -50,11 +54,11 @@ class Ant(env.Env):
     ctrl_cost = .5 * jp.sum(jp.square(action))
     contact_cost = (0.5 * 1e-3 *
                     jp.sum(jp.square(jp.clip(info.contact.vel, -1, 1))))
-    survive_reward = 1.0
+    survive_reward = jp.float32(1)
     reward = forward_reward - ctrl_cost - contact_cost + survive_reward
 
-    done = jp.where(qp.pos[0, 2] < 0.2, x=1.0, y=0.0)
-    done = jp.where(qp.pos[0, 2] > 1.0, x=1.0, y=done)
+    done = jp.where(qp.pos[0, 2] < 0.2, x=jp.float32(1), y=jp.float32(0))
+    done = jp.where(qp.pos[0, 2] > 1.0, x=jp.float32(1), y=done)
     state.metrics.update(
         reward_ctrl_cost=ctrl_cost,
         reward_contact_cost=contact_cost,

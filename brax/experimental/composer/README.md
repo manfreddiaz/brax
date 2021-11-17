@@ -9,16 +9,29 @@ The composed environment is compatible with training algorithms in
 * [composer.py](https://github.com/google/brax/tree/main/brax/experimental/composer/composer.py) for descriptions of the API
 * [observers.py](https://github.com/google/brax/tree/main/brax/experimental/composer/observers.py) for observation definition utilities
 * [reward_functions.py](https://github.com/google/brax/tree/main/brax/experimental/composer/reward_functions.py) for reward definition utilities
-* [env_descs.py](https://github.com/google/brax/tree/main/brax/experimental/composer/env_descs.py) for examples of environment composition configs
+* [envs/](https://github.com/google/brax/tree/main/brax/experimental/composer/envs) for examples of environment composition configs
+* [components/](https://github.com/google/brax/tree/main/brax/experimental/composer/components) for examples of environment component configs
+* [agent_utils.py](https://github.com/google/brax/tree/main/brax/experimental/composer/agent_utils.py) for multi-agent RL support
 
+## Usage
 
-## API Example
-
-*This is an illustrative example. For full examples, see [env_descs.py](https://github.com/google/brax/tree/main/brax/experimental/composer/env_descs.py).*
-
+For composing an environment registered in [envs/](https://github.com/google/brax/tree/main/brax/experimental/composer/envs),
+during creation:
 ```python
 from brax.experimental.composer import composer
+env = composer.create(env_name='pro_ant_run', num_legs=2)
+```
 
+To inspect what environments are pre-registered, and what are configurable environment parameters e.g. `num_legs` for an environment e.g. `pro_ant_run`, use the following. `support_kwargs==True` means that the environment may have unlisted keyword parameters:
+```python
+env_list = composer.list_env()
+env_params, support_kwargs = composer.inspect_env(env_name='pro_ant_run')
+```
+
+For composing an environment from a description `env_desc`:
+```python
+# env_desc captures the full information about the environment
+#   including rewards, observations, resets
 env_desc = dict(
     components=dict(  # component information
         agent1=dict(
@@ -30,8 +43,7 @@ env_desc = dict(
             pos=(1, 0, 0),  # where to place a capsule object
             reward_fns=dict(
                 goal=dict(  # reward1: a target velocity for the object
-                    reward_type='root_goal',
-                    sdcomp='vel',
+                    reward_type='root_goal', sdcomp='vel',
                     target_goal=(4, 0, 0))))),
     edges=dict(  # edge information
         agent1__cap1=dict(  # edge names use sorted component names
@@ -40,17 +52,27 @@ env_desc = dict(
             reward_fns=dict(  # reward2: make the agent close to the object
                 dist=dict(reward_type='root_dist')),),))
 env = composer.create(env_desc=env_desc)
+
+# you may also register envs and create later with `env_name`
+env_name = 'ant_push_6legs'
+composer.register_env(env_name=env_name, env_desc=env_desc)
+env = composer.create(env_name=env_name)
 ```
+
+Lastly, while less recommended, `desc_edits` can be used for dynamic environment editing by directly modifying `env_desc` dictionary object. For examples, see [envs/ant_descs.py](https://github.com/google/brax/tree/main/brax/experimental/composer/envs/ant_descs.py).
+
+*These are illustrative examples. For full examples, see [envs/ant_descs.py](https://github.com/google/brax/tree/main/brax/experimental/composer/envs/ant_descs.py) for standard Brax envs and [envs/ma_descs.py](https://github.com/google/brax/tree/main/brax/experimental/composer/envs/ma_descs.py) for multi-agent RL Brax envs.*
 
 ## Colab Notebooks
 
 Explore Composer easily and quickly through:
 * [Composer Basics](https://colab.research.google.com/github/google/brax/blob/main/notebooks/composer/composer.ipynb) dynamically composes an environment and trains it using PPO within a few minutes.
-* [Experiment Sweep](https://colab.research.google.com/github/google/brax/blob/main/notebooks/braxlines/experiment_sweep.ipynb) provides a basic example for running a hyperparameter sweep. Set `agent_module`=`composer`.
+* [Experiment Sweep](https://colab.research.google.com/github/google/brax/blob/main/notebooks/braxlines/experiment_sweep.ipynb) provides a basic example for running a hyperparameter sweep. Set `experiment`=`composer_sweep`.
 * [Experiment Viewer](https://colab.research.google.com/github/google/brax/blob/main/notebooks/braxlines/experiment_viewer.ipynb) provides a basic example for visualizing results from a hyperparameter sweep.
 
 Tips:
-* for debugging, use:
+* `env_desc` and `config_json` are full descriptions of the environment and the system, and are accessible through `env.env_desc` and `env.metadata.config_json`.
+* for debugging NaNs, use:
 ```python
 from jax.config import config
 config.update("jax_debug_nans", True)
@@ -60,8 +82,11 @@ config.update("jax_debug_nans", True)
 
 <img src="https://github.com/google/brax/raw/main/docs/img/braxlines/sketches.png" width="540" height="220"/>
 
-For a deep dive into Composer, please see
-our paper, [Braxlines: Fast and Interactive Toolkit for RL-driven Behavior Generation Beyond Reward Maximization](https://openreview.net/forum?id=-W0LCm8wE2S).
+For a deep dive into Braxlines, please see
+our paper, [Braxlines: Fast and Interactive Toolkit for RL-driven Behavior Generation Beyond Reward Maximization](https://arxiv.org/abs/2110.04686).
+
+*Braxlines is under rapid development. While API is stabilizing,
+feel free to send documentation and feature questions and requests through git or email.*
 
 ## Citing Composer
 
@@ -69,8 +94,9 @@ If you would like to reference Braxlines in a publication, please use:
 
 ```
 @article{gu2021braxlines,
-  title={Braxlines: Fast and Interactive Toolkit for RL-driven Behavior Generation Beyond Reward Maximization},
-  author={Gu, Shixiang Shane and Diaz, Manfred and Freeman, C Daniel and Furuta, Hiroki and Ghasemipour, Seyed Kamyar Seyed and Raichuk, Anton and David, Byron and Frey, Erik and Coumans, Erwin and Bachem, Olivier},
+  title={Braxlines: Fast and Interactive Toolkit for RL-driven Behavior Engineering beyond Reward Maximization},
+  author={Gu, Shixiang Shane and Diaz, Manfred and Freeman, Daniel C and Furuta, Hiroki and Ghasemipour, Seyed Kamyar Seyed and Raichuk, Anton and David, Byron and Frey, Erik and Coumans, Erwin and Bachem, Olivier},
+  journal={arXiv preprint arXiv:2110.04686},
   year={2021}
 }
 @software{brax2021github,

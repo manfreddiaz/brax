@@ -29,6 +29,7 @@ from brax.experimental.braxlines.training import env
 from brax.training import distribution
 from brax.training import networks
 from brax.training import normalization
+from brax.training import pmap
 from brax.training import ppo
 from brax.training.types import Params
 from brax.training.types import PRNGKey
@@ -187,6 +188,7 @@ def train(environment_fn: Callable[..., envs.Env],
       'devices to be used count: %d', jax.device_count(), process_count,
       process_id, local_device_count, local_devices_to_use)
 
+  # TODO: check key randomness
   key = jax.random.PRNGKey(seed)
   key, key_models, key_env, key_eval = jax.random.split(key, 4)
   # Make sure every process gets a different random key, otherwise they will be
@@ -221,7 +223,7 @@ def train(environment_fn: Callable[..., envs.Env],
                  'value': value_params or value_model.init(key_value),
                  'extra': extra_params}
   optimizer_state = optimizer.init(init_params)
-  optimizer_state, init_params = normalization.bcast_local_devices(
+  optimizer_state, init_params = pmap.bcast_local_devices(
       (optimizer_state, init_params), local_devices_to_use)
 
   tmp_env_states = []

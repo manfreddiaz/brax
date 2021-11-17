@@ -15,6 +15,8 @@
 """Component loader and editor."""
 # pylint:disable=protected-access
 # pylint:disable=g-complex-comprehension
+# pylint:disable=g-doc-args
+# pylint:disable=g-doc-return-or-yield
 import copy
 import itertools
 import json
@@ -100,36 +102,63 @@ def json_collides(first_collides: Tuple[str],
   return dict(collide_include=collides)
 
 
-def add_suffix(name: str, suffix: str):
-  """Add suffix to string."""
-  if suffix:
-    return f'{name}_{suffix}'
-  else:
-    return name
+SPLITTER = '___'
+COMP_SPLITTER = '__'
 
 
-def json_add_suffix(
+def concat_comps(*comp_names):
+  """Concat comp_name."""
+  if not comp_names:
+    return None
+  return COMP_SPLITTER.join(sorted(comp_names))
+
+
+def match_name(name: str, *comp_names):
+  """Check comp_name matches name, e.g. ('a1__a2___dist','a1','a2')-->True."""
+  comp_name = concat_comps(*comp_names)
+  assert comp_name
+  return name.startswith(f'{comp_name}{SPLITTER}')
+
+
+def concat_name(name: str, *comp_names):
+  """Add comp_name to name, e.g. ('dist', 'a2', 'a1')-->'a1__a2___dist'."""
+  comp_name = concat_comps(*comp_names)
+  if comp_name:
+    return f'{comp_name}{SPLITTER}{name}'
+  return name
+
+
+def split_name(name: str):
+  """Split the name, e.g. ('a1__a2___dist')-->('dist', ('a1', 'a2'))."""
+  if SPLITTER not in name:
+    return name, []
+  comp_name, name = name.split(SPLITTER, 1)
+  comp_names = comp_name.split(COMP_SPLITTER)
+  return name, comp_names
+
+
+def json_concat_name(
     config_dict: Any,
-    suffix: str = '',
+    comp_name: str = '',
     parents: Tuple[str] = (),
     excludes: Tuple[str] = ('Ground',),
     force_add: bool = False,
 ) -> Dict[str, Any]:
-  """Add suffix to all name references in config."""
+  """Add comp_name to all name references in config."""
   if isinstance(config_dict, dict):
     return {
-        key: json_add_suffix(
+        key: json_concat_name(
             value,
-            suffix=suffix,
+            comp_name=comp_name,
             parents=parents + (key,),
             excludes=excludes,
             force_add=force_add) for key, value in config_dict.items()
     }
   elif isinstance(config_dict, (list, tuple)):
     return type(config_dict)([
-        json_add_suffix(
+        json_concat_name(
             value,
-            suffix=suffix,
+            comp_name=comp_name,
             parents=parents,
             excludes=excludes,
             force_add=force_add) for value in config_dict
@@ -139,5 +168,5 @@ def json_add_suffix(
                      parents[-1] in NAME_FIELDS.get(parents[-2], ())):
       assert isinstance(config_dict, str), config_dict
       if config_dict not in excludes:
-        config_dict = add_suffix(config_dict, suffix)
+        config_dict = concat_name(config_dict, comp_name)
     return config_dict

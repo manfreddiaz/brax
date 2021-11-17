@@ -96,6 +96,7 @@ def rollout_env(
     tmp_key, rng = jax.random.split(rng)
     act = jit_inference_fn(params, state.obs, tmp_key)
     state = jit_env_step(state, act, *step_args)
+  states.append(state)
   return env, states
 
 
@@ -106,6 +107,8 @@ def visualize_env(batch_size: int = 0,
                   **kwargs):
   """Visualize env."""
   env, states = rollout_env(batch_size=batch_size, **kwargs)
+  if verbose:
+    print(f'Collected {max(1, batch_size)} trajs of T={len(states)}')
 
   if output_path:
     output_name = os.path.splitext(output_name)[0]
