@@ -118,6 +118,7 @@ ENV_DESCS = {
         ),
     'ant_volley':
         dict(
+            global_options=dict(elasticity=0.75),
             components=dict(
                 agent1=dict(
                     component='ant',
@@ -125,7 +126,7 @@ ENV_DESCS = {
                 ),
                 cap1=dict(
                     component='singleton',
-                    component_params=dict(size=0.5),
+                    component_params=dict(size=0.25),
                     pos=(3, 0, 3),
                     observers=('root_z_joints',),
                     reward_fns=dict(
@@ -133,7 +134,7 @@ ENV_DESCS = {
                             reward_type='root_goal',
                             sdcomp='pos',
                             indices=(2),
-                            offset=5,
+                            offset=0,
                             scale=1,
                             target_goal=5
                         )
