@@ -25,11 +25,11 @@ def get_specs(size: float = 0.25,
   """Get system config."""
   if collider_type == 'sphere':
     assert isinstance(size, (float, int)), size
-    collider = dict(sphere=dict(radius=size), elasticity=elasticity)
+    collider = dict(sphere=dict(radius=size, elasticity=elasticity))
     scale = size
   elif collider_type == 'capsule':
     assert len(size) == 2, size
-    collider = dict(capsule=dict(radius=size[0], length=size[1]), elasticity=elasticity)
+    collider = dict(capsule=dict(radius=size[0], length=size[1], elasticity=elasticity))
     scale = size[0]
   else:
     raise NotImplementedError(collider_type)
