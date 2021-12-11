@@ -115,7 +115,37 @@ ENV_DESCS = {
                     extra_observers=[
                         dict(observer_type='root_vec', indices=(0, 1)),
                     ],),),
-        )
+        ),
+    'ant_volley':
+        dict(
+            components=dict(
+                agent1=dict(
+                    component='ant',
+                    pos=(0, 0, 0),
+                ),
+                cap1=dict(
+                    component='singleton',
+                    component_params=dict(size=0.5),
+                    pos=(1, 0, 3),
+                    observers=('root_z_joints',),
+                    reward_fns=dict(
+                        goal=dict(
+                            reward_type='root_goal',
+                            sdcomp='pos',
+                            indices=(2),
+                            offset=5,
+                            scale=1,
+                            target_goal=5)),
+                ),
+            ),
+            edges=dict(
+                agent1__cap1=dict(
+                    extra_observers=[
+                        dict(observer_type='root_vec', indices=(0, 1)),
+                    ],
+                    reward_fns=dict(
+                        dist=dict(reward_type='root_dist', offset=5)),
+                ),)),
 }
 
 
