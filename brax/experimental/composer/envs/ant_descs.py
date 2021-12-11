@@ -126,7 +126,7 @@ ENV_DESCS = {
                 cap1=dict(
                     component='singleton',
                     component_params=dict(size=0.5),
-                    pos=(1, 0, 3),
+                    pos=(3, 0, 3),
                     observers=('root_z_joints',),
                     reward_fns=dict(
                         goal=dict(
@@ -135,7 +135,9 @@ ENV_DESCS = {
                             indices=(2),
                             offset=5,
                             scale=1,
-                            target_goal=5)),
+                            target_goal=5
+                        )
+                    ),
                 ),
             ),
             edges=dict(
